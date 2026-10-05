@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Leitor do Diário de Bordo</title>
+  <link rel="stylesheet" href="/src/style.css">
+</head>
+<body>
+  <header class="top">
+    <h1>Leitor do Diário de Bordo</h1>
+    <p>Envie as folhas digitalizadas (PDF ou foto) e receba as linhas prontas para a base: PRODUÇÃO e PARADAS.</p>
+  </header>
+
+  <main>
+    <section class="card" id="setup">
+      <details id="keybox">
+        <summary><strong>1. Chave do Gemini</strong> <span id="keystate" class="pill">não configurada</span></summary>
+        <div class="keyform">
+          <p>A leitura da letra é feita pelo Gemini (Google), que tem plano gratuito. Crie a chave em
+            <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a>
+            (login com conta Google, sem cartão) e cole abaixo. Ela fica só neste navegador.</p>
+          <div class="row">
+            <input id="apikey" type="password" placeholder="Cole a chave aqui" autocomplete="off" spellcheck="false">
+            <button id="savekey" type="button">Salvar e testar</button>
+          </div>
+          <label class="row">Modelo
+            <select id="model"></select>
+          </label>
+          <p class="note">Plano gratuito: o Google pode usar o conteúdo enviado para melhorar seus produtos. Se as folhas forem sigilosas, use uma chave de plano pago.</p>
+        </div>
+      </details>
+    </section>
+
+    <section class="card" id="upload">
+      <strong>2. Folhas</strong>
+      <div id="drop" class="drop" tabindex="0">
+        <p>Arraste os arquivos aqui ou <label class="link">escolha<input id="files" type="file" accept="application/pdf,image/*" multiple hidden></label></p>
+        <p class="note">PDF (várias páginas) ou fotos JPG/PNG. A página pode estar girada ou levemente torta.</p>
+      </div>
+      <label class="row">Ano das datas
+        <input id="year" type="number" min="2000" max="2100" style="width:6rem">
+      </label>
+    </section>
+
+    <section id="status" class="card" hidden></section>
+    <section id="pages"></section>
+  </main>
+
+  <footer class="bar" id="exportbar" hidden>
+    <div id="summary"></div>
+    <div class="actions">
+      <button id="copyprod" type="button">Copiar PRODUÇÃO</button>
+      <button id="copystop" type="button">Copiar PARADAS</button>
+      <button id="xlsx" type="button" class="primary">Baixar Excel</button>
+    </div>
+  </footer>
+  <div id="toast" role="status" hidden></div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
