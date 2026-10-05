@@ -8,6 +8,10 @@
     --accent: #5b8cff; --accent-ink: #0b1020; --warn: #4a3d05; --warn-line: #b8960a; --bad: #4b1c18; --bad-line: #e0584a; --ok: #4cc26b;
   }
 }
+:root[data-theme="dark"] {
+    --bg: #12151b; --card: #1a1f29; --ink: #e8ebf2; --muted: #9aa5b8; --line: #2c3342;
+    --accent: #5b8cff; --accent-ink: #0b1020; --warn: #4a3d05; --warn-line: #b8960a; --bad: #4b1c18; --bad-line: #e0584a; --ok: #4cc26b;
+  }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 system-ui, sans-serif; padding-bottom: 7rem; }
 .top, main { max-width: 1280px; margin: 0 auto; padding: 0 16px; }

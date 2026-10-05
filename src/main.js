@@ -12,6 +12,7 @@ const store = {
 };
 
 const state = { pages: [], nextId: 1, busy: false };
+window.__state = state; // used by the demo exporter / debugging
 const DEFAULT_MODEL = 'gemini-2.5-flash';
 
 function h(tag, attrs = {}, ...kids) {
@@ -275,6 +276,19 @@ $('xlsx').addEventListener('click', () => {
   document.body.append(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 5000);
 });
+
+async function loadDemo() {
+  const { default: demo } = await import('./demo.json');
+  for (const d of demo) {
+    const p = { ...structuredClone(d), id: state.nextId++, status: 'ok', error: '', images: [], strips: { prod: [], stops: [] } };
+    state.pages.push(p);
+    $('pages').append(h('section', { class: 'card page', id: `page-${p.id}` }));
+    renderPage(p);
+  }
+  updateSummary();
+  toast('Exemplo carregado: 2 folhas suas já lidas');
+}
+$('demo')?.addEventListener('click', loadDemo);
 
 const drop = $('drop');
 ['dragenter', 'dragover'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add('over'); }));

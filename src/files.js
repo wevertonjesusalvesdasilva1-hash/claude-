@@ -2,7 +2,15 @@
 import * as pdfjs from 'pdfjs-dist';
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 
-pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
+// In the single-file build the worker is a data: URI, which browsers refuse as a Worker URL; turn it into a blob.
+function resolveWorker(url) {
+  if (!url.startsWith('data:')) return url;
+  const [head, b64] = url.split(',');
+  const bin = atob(b64);
+  const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
+  return URL.createObjectURL(new Blob([bytes], { type: head.includes('javascript') ? 'text/javascript' : 'application/octet-stream' }));
+}
+pdfjs.GlobalWorkerOptions.workerSrc = resolveWorker(workerUrl);
 
 const MAX_SIDE = 2600;
 
