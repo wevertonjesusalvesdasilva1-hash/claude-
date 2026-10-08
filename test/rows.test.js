@@ -71,3 +71,12 @@ test('motivo: a posição do X (pixels) vence a leitura da IA e a divergência f
   assert.equal(page.stops[2].motivo, 'OUTROS');
   assert.match(page.stops[1].flags.turno, /turno 3 é raro/);
 });
+
+test('duas leituras com numeração de linha diferente são pareadas pelo conteúdo', () => {
+  const mk = (linha) => ({ linha, data: '02/10', chapa: '11833', ini: '08:20', fim: '08:50', turno: '1', motivo: 'SET-UP' });
+  const A = { producao: [], paradas: [mk(2)] };
+  const B = { producao: [], paradas: [mk(7)] };
+  const m = reconcile(A, B);
+  assert.equal(m.paradas.length, 1);
+  assert.ok(!m.paradas[0].soUma);
+});

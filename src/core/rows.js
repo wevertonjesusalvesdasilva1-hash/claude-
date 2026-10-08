@@ -50,15 +50,25 @@ function mergeRows(a, b, fields) {
 
 // Rows are paired by their printed line number ("linha"). A row seen by only one reading is kept and marked.
 export function reconcile(A, B) {
+  const KEYS = ['chapa', 'chapa1', 'chapa2', 'chapa3', 'ini', 'fim', 'ini1', 'fim1', 'ini2', 'fim2', 'ini3', 'fim3'];
+  const agree = (x, y) => KEYS.filter((k) => (x[k] ?? '') !== '' && canon(k, x[k]) === canon(k, y[k])).length;
   const merge = (ra = [], rb = [], fields) => {
-    const map = new Map(rb.map((r) => [r.linha, r]));
-    const out = ra.map((r) => {
-      const other = map.get(r.linha);
-      map.delete(r.linha);
-      return other ? mergeRows(r, other, fields) : { ...r, soUma: true, alt: {} };
-    });
-    for (const r of map.values()) out.push({ ...r, soUma: true, alt: {} });
-    return out.sort((x, y) => x.linha - y.linha);
+    const pairs = [];
+    const freeA = [...ra], freeB = [...rb];
+    // 1) same printed line number
+    for (const x of [...freeA]) {
+      const j = freeB.findIndex((y) => y.linha === x.linha);
+      if (j >= 0) { pairs.push([x, freeB[j]]); freeA.splice(freeA.indexOf(x), 1); freeB.splice(j, 1); }
+    }
+    // 2) the two readings numbered the lines differently: pair what is left by content
+    for (const x of [...freeA]) {
+      let best = -1, score = 1;
+      freeB.forEach((y, j) => { const sc = agree(x, y); if (sc > score) { score = sc; best = j; } });
+      if (best >= 0) { pairs.push([x, freeB[best]]); freeA.splice(freeA.indexOf(x), 1); freeB.splice(best, 1); }
+    }
+    const out = pairs.map(([x, y]) => mergeRows(x, y, fields));
+    for (const r of [...freeA, ...freeB]) out.push({ ...r, soUma: true, alt: {} });
+    return out.sort((p, q) => p.linha - q.linha);
   };
   return {
     maquina: A.maquina || B.maquina,
