@@ -1,7 +1,8 @@
 import { readFiles, toCanvas, jpegB64, jpegUrl } from './files.js';
 import { analyze, detectMachine, MACHINES } from './core/layout.js';
+import { inkIn } from './core/image.js';
 import { readSheet } from './core/gemini.js';
-import { buildPage, reconcile } from './core/rows.js';
+import { buildPage, reconcile, applyInkMotivo } from './core/rows.js';
 import { allRows, toTSV, workbookBytes } from './core/export.js';
 import { getLists, saveLists, learnAlias, resetLists } from './core/lists.js';
 import { saveState, loadState } from './store.js';
@@ -69,13 +70,22 @@ function prepare(image) {
   try { lay = analyze(image); } catch (e) { console.warn('layout', e); }
   if (!lay) {
     const full = toCanvas(image, 0, 0, image.width, image.height, 2000);
-    return { A: [jpegB64(full, 0.88)], B: [jpegB64(full, 0.9)], strips: { prod: [], stops: [] }, bubble: '' };
+    return { A: [jpegB64(full, 0.88)], B: [jpegB64(full, 0.9)], strips: { prod: [], stops: [] }, bubble: '', inkMotivo: [] };
   }
   const { img, prodX, prodY, stopX, stopY, scale: sc } = lay;
   const full = toCanvas(img, 0, 0, img.width, img.height, 2000);
   const crop = (xs, ys, headPx, maxW) => toCanvas(img, xs[0] - 8, ys[0] - headPx * sc, xs.at(-1) - xs[0] + 16, ys.at(-1) - ys[0] + headPx * sc + 6, maxW);
   const strip = (xs, ys, i) => jpegUrl(toCanvas(img, xs[0] - 2, ys[i] - 2, xs.at(-1) - xs[0] + 4, ys[i + 1] - ys[i] + 4, 1500), 0.8);
+  // which motive column holds the X on each stop row, measured from the pixels
+  const inkMotivo = stopY.slice(0, -1).map((_, r) => {
+    const inks = MOTIVOS.map((__, i) => inkIn(lay.masks, stopX[6 + i] + 4 * sc, stopY[r] + 4 * sc, stopX[7 + i] - 4 * sc, stopY[r + 1] - 4 * sc));
+    const min = 45 * sc * sc;
+    const hit = inks.map((v, i) => [v, i]).filter(([v]) => v > min).sort((a, b) => b[0] - a[0]);
+    if (!hit.length) return -1;
+    return hit.length > 1 && hit[1][0] > hit[0][0] * 0.6 ? -2 : hit[0][1];
+  });
   return {
+    inkMotivo,
     A: [jpegB64(full, 0.88), jpegB64(crop(prodX, prodY, 62, 2200), 0.9), jpegB64(crop(stopX, stopY, 100, 2200), 0.9)],
     B: [jpegB64(crop(prodX, prodY, 62, 2400), 0.92), jpegB64(crop(stopX, stopY, 100, 2400), 0.92)],
     strips: { prod: prodY.slice(0, -1).map((_, i) => strip(prodX, prodY, i)), stops: stopY.slice(0, -1).map((_, i) => strip(stopX, stopY, i)) },
@@ -101,6 +111,7 @@ async function readPage(p) {
     const single = a.status === 'rejected' || b.status === 'rejected';
     const json = single ? (a.status === 'fulfilled' ? a.value : b.value) : reconcile(a.value, b.value);
     const built = buildPage(json, { year: Number($('year').value) || new Date().getFullYear(), meta: { machineFromBubble: sec.bubble } });
+    applyInkMotivo(built, sec.inkMotivo);
     Object.assign(p, built, { status: 'ok', single });
     for (const r of p.prod) r.strip = sec.strips.prod[r.linha - 1];
     for (const r of p.stops) r.strip = sec.strips.stops[r.linha - 1];

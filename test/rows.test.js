@@ -57,3 +57,17 @@ test('aprende correções do usuário', () => {
   assert.equal(r.flags.modelo, undefined);
   resetLists();
 });
+
+test('motivo: a posição do X (pixels) vence a leitura da IA e a divergência fica avisada', async () => {
+  const { applyInkMotivo } = await import('../src/core/rows.js');
+  const page = buildPage({ maquina: 'RAW12', data: '02/10', producao: [], paradas: [
+    { linha: 1, data: '02/10', chapa: '11833', ini: '08:20', fim: '08:50', turno: '1', motivo: 'TROCA DE PEÇA' },
+    { linha: 2, data: '02/10', chapa: '11833', ini: '11:05', fim: '11:35', turno: '3', motivo: 'SET-UP' },
+    { linha: 3, data: '02/10', chapa: '11833', ini: '12:20', fim: '13:20', turno: '1', motivo: null }] }, { year: 2026 });
+  applyInkMotivo(page, [7, 7, 8]); // SET-UP, SET-UP, OUTROS
+  assert.equal(page.stops[0].motivo, 'SET-UP');
+  assert.match(page.stops[0].flags.motivo, /X está na coluna SET-UP; a IA leu TROCA DE PEÇA/);
+  assert.equal(page.stops[1].flags.motivo, undefined, 'IA e pixels concordam: sem aviso');
+  assert.equal(page.stops[2].motivo, 'OUTROS');
+  assert.match(page.stops[1].flags.turno, /turno 3 é raro/);
+});

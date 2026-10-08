@@ -143,6 +143,24 @@ export function buildPage(json, { year, meta = {} }) {
   return page;
 }
 
+// The X is detected from the pixels (which column of the printed grid holds ink), which is
+// more reliable than the model's reading: the model tends to slip one column sideways.
+// inkIdx[linha-1] = index in MOTIVOS, -1 when no X was found, -2 when several columns have ink.
+export function applyInkMotivo(page, inkIdx) {
+  for (const r of page.stops) {
+    const idx = inkIdx?.[r.linha - 1];
+    if (idx == null || idx === -1) continue;
+    if (idx === -2) { r.flags.motivo = r.flags.motivo ? `${r.flags.motivo} · mais de um X na linha` : 'mais de um X na linha'; continue; }
+    const fromInk = MOTIVOS[idx];
+    if (r.motivo !== fromInk) {
+      r.flags.motivo = r.motivo ? `X está na coluna ${fromInk}; a IA leu ${r.motivo}` : `X está na coluna ${fromInk}`;
+      r.motivo = fromInk;
+    } else if (r.flags.motivo && /sem motivo|IA em dúvida/.test(r.flags.motivo)) {
+      delete r.flags.motivo;
+    }
+  }
+}
+
 // ------------------------------------------------------------------ sanity checks
 
 const toMin = (t) => { const m = /^(\d{2}):(\d{2})$/.exec(t ?? ''); return m ? +m[1] * 60 + +m[2] : null; };
@@ -162,6 +180,7 @@ export function runChecks(page) {
   };
   for (const r of page.prod) {
     checkDate(r);
+    if (r.turno === '3') flag(r, 'turno', 'turno 3 é raro, confira');
     for (const n of [1, 2, 3]) {
       const dur = durationMin(r[`ini${n}`], r[`fim${n}`]);
       if (dur === 0) flag(r, `fim${n}`, 'início e fim iguais');
@@ -170,6 +189,7 @@ export function runChecks(page) {
   }
   for (const r of page.stops) {
     checkDate(r);
+    if (r.turno === '3') flag(r, 'turno', 'turno 3 é raro, confira');
     const dur = durationMin(r.ini, r.fim);
     if (dur === 0) flag(r, 'fim', 'início e fim iguais');
     else if (dur != null && dur > 8 * 60) flag(r, 'fim', `parada de ${Math.round(dur / 60)}h, confira`);

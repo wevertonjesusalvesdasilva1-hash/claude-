@@ -66,6 +66,8 @@ REGRAS
 - Horários em 24h no formato HH:MM ("5:30" → "05:30"). Cruzar a meia-noite é normal.
 - CHAPA é o número do crachá do operador, 4 ou 5 dígitos. Chapas conhecidas: ${chapas.join(', ')}. Leia dígito por dígito; 1 e 7, 4 e 9, 6 e 0 se parecem na letra deste pessoal, então compare com a lista, mas copie o que está escrito se for claramente outro número.
 - PEÇA costuma ser: ${pecas.join(', ')}. MODELO costuma ser: ${modelos.join(', ')}. Se estiver escrito diferente, copie como está.
+- Na DESCRIÇÃO DA PARADA aparecem com frequência as palavras Tyorei (reunião; também escrita Tiorei, Fiorei, Forey, Chorei), Almoço, Janta, Arame, Setup, "Aguardando ponte". Se a palavra for parecida, escreva a forma correta.
+- O X do MOTIVO fica dentro de UMA coluna do cabeçalho; confira com cuidado de qual coluna é, olhando o cabeçalho diretamente acima dela (SET-UP e TROCA DE PEÇA são vizinhas, assim como TROCA DE CONSUMÍVEIS).
 - Use em "linha" o número da linha na tabela impressa, contando de cima.
 - NÃO invente. Se não conseguir ler um campo, devolva null e coloque o nome do campo em "duvidas". Prefira admitir dúvida a chutar.
 - Responda somente com o JSON do esquema.`;
