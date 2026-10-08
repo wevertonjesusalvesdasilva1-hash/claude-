@@ -14,7 +14,7 @@ export async function readSheet({ images, pass, hints }) {
     }
     if (res.ok && body.data) return body.data;
     const hard = /diário|por dia|GEMINI_API_KEY/i.test(body.error ?? '');
-    if (!RETRY.has(res.status) || hard || i >= 2) throw new Error(body.error || `Erro ${res.status} no servidor de leitura`);
-    await sleep(8000 * (i + 1));
+    if (!RETRY.has(res.status) || hard || i >= 3) throw new Error(body.error || `Erro ${res.status} no servidor de leitura`);
+    await sleep(10000 * (i + 1));
   }
 }

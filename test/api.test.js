@@ -36,9 +36,39 @@ test('chama o Gemini com a chave no cabeçalho e devolve o JSON', async () => {
   assert.equal(JSON.parse(seen[0].init.body).generationConfig.temperature, 0);
 });
 
-test('cota esgotada vira mensagem amigável', async () => {
+test('cota diária esgotada vira mensagem amigável e não insiste', async () => {
   process.env.GEMINI_API_KEY = 'k';
-  globalThis.fetch = async () => ({ ok: false, status: 429, text: async () => 'RESOURCE_EXHAUSTED quota per day PerDay' });
+  let n = 0;
+  globalThis.fetch = async () => { n++; return { ok: false, status: 429, text: async () => 'RESOURCE_EXHAUSTED quota per day PerDay' }; };
   const r = mkRes(); await handler(req({ headers: { host: 'app.test', 'x-forwarded-for': '8.8.8.8' } }), r);
-  assert.equal(r.code, 429); assert.match(r.body.error, /plano gratuito/);
+  assert.equal(r.code, 429); assert.match(r.body.error, /diário/);
+  assert.equal(n, 1);
+});
+
+test('503 de um modelo passa para o modelo reserva', async () => {
+  process.env.GEMINI_API_KEY = 'k';
+  const used = [];
+  globalThis.fetch = async (url) => {
+    used.push(decodeURIComponent(String(url).split('/models/')[1].split(':')[0]));
+    if (used.length === 1) return { ok: false, status: 503, text: async () => 'high demand' };
+    return { ok: true, json: async () => ({ candidates: [{ content: { parts: [{ text: '{"producao":[],"paradas":[]}' }] } }] }) };
+  };
+  const r = mkRes(); await handler(req({ headers: { host: 'app.test', 'x-forwarded-for': '7.7.7.7' } }), r);
+  assert.equal(r.code, 200);
+  assert.deepEqual(used, ['gemini-flash-latest', 'gemini-2.5-flash']);
+  assert.equal(r.body.model, 'gemini-2.5-flash');
+});
+
+test('modelo que recusa thinkingConfig é repetido sem ele', async () => {
+  process.env.GEMINI_API_KEY = 'k';
+  const bodies = [];
+  globalThis.fetch = async (url, init) => {
+    bodies.push(JSON.parse(init.body));
+    if (bodies.length === 1) return { ok: false, status: 400, text: async () => 'Unknown field thinkingBudget thinking' };
+    return { ok: true, json: async () => ({ candidates: [{ content: { parts: [{ text: '{"producao":[],"paradas":[]}' }] } }] }) };
+  };
+  const r = mkRes(); await handler(req({ headers: { host: 'app.test', 'x-forwarded-for': '6.6.6.6' } }), r);
+  assert.equal(r.code, 200);
+  assert.ok(bodies[0].generationConfig.thinkingConfig);
+  assert.equal(bodies[1].generationConfig.thinkingConfig, undefined);
 });
