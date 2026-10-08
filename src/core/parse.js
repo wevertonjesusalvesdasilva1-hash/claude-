@@ -1,7 +1,7 @@
 // Normalisation of raw OCR text into valid sheet values.
 // Every function returns { value, flag } where flag is null (confident) or a short
 // reason the user should double-check the cell.
-import { CHAPAS, PECAS, MODELOS } from '../data/vocab.js';
+import { getLists } from './lists.js';
 
 const DIGIT_LOOKALIKES = {
   O: '0', o: '0', D: '0', Q: '0', U: '0',
@@ -49,25 +49,28 @@ export function lev(a, b) {
   return dp[a.length][b.length];
 }
 
-// Closest value from a list (by edit distance), or null when nothing is close.
-function nearest(value, list, maxDist) {
-  let best = null, bd = 99;
+// Closest values from a list (by edit distance).
+function nearestAll(value, list, maxDist) {
+  const out = [];
   for (const k of list) {
     const d = lev(value, k);
-    if (d < bd) { bd = d; best = k; }
+    if (d <= maxDist) out.push({ k, d });
   }
-  return best && bd <= maxDist ? best : null;
+  return out.sort((x, y) => x.d - y.d);
 }
 
-// Never rewrites what was read: an unknown chapa is kept as is and flagged, with the
-// closest known one suggested in the tooltip.
-export function normChapa(text, known = CHAPAS) {
+// A chapa outside the list is corrected only when exactly ONE listed chapa is a single
+// digit away (7710 → 7910); the cell is flagged so the original reading stays visible.
+// Anything less certain is kept as read and flagged with the closest suggestions.
+export function normChapa(text, known = getLists().chapas) {
   if (!text) return { value: '', flag: null };
   const digits = lookalikeDigits(String(text)).replace(/\D/g, '');
   if (!digits) return { value: '', flag: 'ilegível' };
   if (known.includes(digits)) return { value: digits, flag: null };
-  const near = nearest(digits, known, 2);
-  return { value: digits, flag: near ? `chapa fora da lista, parecida com ${near}` : 'chapa desconhecida' };
+  const near = nearestAll(digits, known, 2);
+  const one = near.filter((n) => n.d === 1);
+  if (one.length === 1 && digits.length === one[0].k.length) return { value: one[0].k, flag: `corrigida de ${digits}: ${one[0].k} está na lista`, corrected: true, original: digits };
+  return { value: digits, flag: near.length ? `chapa fora da lista, parecida com ${near.slice(0, 2).map((n) => n.k).join(' ou ')}` : 'chapa desconhecida' };
 }
 
 export function normTurno(text) {
@@ -101,8 +104,8 @@ function checkVocab(text, vocab, zeroForO = false) {
   return { value: String(text).trim().toUpperCase(), flag: best && bd <= 0.5 ? `fora da lista, parecido com ${best}` : 'valor novo' };
 }
 
-export const normPeca = (t) => checkVocab(t, PECAS);
-export const normModelo = (t) => checkVocab(t, MODELOS, true);
+export const normPeca = (t) => checkVocab(t, getLists().pecas);
+export const normModelo = (t) => checkVocab(t, getLists().modelos, true);
 
 export function normFree(text) {
   return { value: String(text ?? '').trim(), flag: text ? 'conferir' : null };

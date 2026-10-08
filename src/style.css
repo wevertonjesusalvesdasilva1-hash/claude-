@@ -59,3 +59,15 @@ td.num input { text-align: center; }
 .actions { display: flex; gap: 8px; flex-wrap: wrap; }
 #toast { position: fixed; left: 50%; bottom: 5.5rem; transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 8px 16px; border-radius: 8px; z-index: 10; }
 progress { width: 100%; height: 10px; }
+
+.lists { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin: 8px 0; }
+.lists label { display: grid; gap: 4px; font-size: .85rem; color: var(--muted); }
+.lists textarea { width: 100%; font: inherit; color: var(--ink); background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; }
+.rowtag { font-size: .75rem; margin: 0 0 4px; display: flex; gap: 6px; align-items: center; }
+.rowtag b { color: var(--muted); font-weight: 600; }
+table.grid tr.strip img { cursor: zoom-in; }
+#lightbox { position: fixed; inset: 0; background: rgb(0 0 0 / .8); display: grid; place-items: center; padding: 16px; z-index: 20; overflow: auto; cursor: zoom-out; }
+#lightbox img { max-width: none; width: min(2000px, 220%); background: #fff; }
+.onlyflags tr.clean { display: none; }
+.hint { color: var(--muted); font-size: .8rem; }
+[hidden] { display: none !important; }

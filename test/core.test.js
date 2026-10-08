@@ -15,9 +15,9 @@ test('horários', () => {
 
 test('chapa: aceita as conhecidas e sinaliza as demais', () => {
   assert.deepEqual(normChapa('11678'), { value: '11678', flag: null });
-  const near = normChapa('11679');
-  assert.equal(near.value, '11679', 'não troca o valor lido');
-  assert.match(near.flag, /parecida com 11678/);
+  const fixed = normChapa('11679');
+  assert.equal(fixed.value, '11678', 'corrige quando só uma chapa da lista está a 1 dígito');
+  assert.match(fixed.flag, /corrigida de 11679/);
   assert.equal(normChapa('99999').flag, 'chapa desconhecida');
 });
 
